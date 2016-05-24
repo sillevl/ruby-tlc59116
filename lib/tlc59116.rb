@@ -3,37 +3,54 @@ require "i2c"
 
 module Tlc59116
   class Tlc59116
-    I2C_ADDRESS = 0x1B
+    I2C_ADDRESS = 0x68
 
-    module Register
-      MODE1 = 0x00,
-      MODE2 = 0x01,
-      PWM = 0x02,
-      LED_OUT_0 = 0x14,
-      ERROR_FLAGS1 = 0x1D,
+    module Registers
+      MODE1 = 0x00
+      MODE2 = 0x01
+      PWM = 0x02
+      GROUPBRIGHTNESS = 0x12
+      LED_OUT_0 = 0x14
+      ERROR_FLAGS1 = 0x1D
       ERROR_FLAGS2 = 0x1E
     end
 
     AUTO_INCREMENT = 0x80;
 
-  	def initialize i2c
-  		@i2c = i2c
-   	end
+    def initialize i2c
+  	@i2c = i2c
+    end
+
+    def mode1 value
+      write Registers::MODE1, value
+    end
+
+    def mode2 value
+      write Registers::MODE2, value
+    end
 
     def enable
-      write Register::MODE1, 0x00;
+	value = read_byte Registers::MODE1
+	write Registers::MODE1, value & 0xEF
+	sleep 0.001
     end
 
     def disable
-      write Register::MODE1, 0x10;
+	value = read_byte Registers::MODE1
+	write Registers::MODE1, value | 0x10
     end
 
-    def pwm_control value
-      write Register::LED_OUT_0 | AUTO_INCREMENT, *value
+    def pwm_control *value
+      write Registers::LED_OUT_0 | AUTO_INCREMENT, *value
     end
 
-    def pwm address, value
-      write Register::PWM | AUTO_INCREMENT, *value
+    def pwm *value, offset: offset = 0
+	raise "Offset must be smaller than 16" if offset >= 16
+      write (Registers::PWM + offset) | AUTO_INCREMENT, *value
+    end
+
+    def group_brightness value
+      write Registers::GROUPBRIGHTNESS, value
     end
 
     private
@@ -51,8 +68,8 @@ module Tlc59116
       data.unpack("S_").first
     end
 
-    def write register, value
-      @i2c.write I2C_ADDRESS, *value
+    def write register, *values
+      @i2c.write I2C_ADDRESS, register, *values
     end
 
   end

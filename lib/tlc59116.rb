@@ -16,8 +16,8 @@ module Tlc59116
 
     AUTO_INCREMENT = 0x80;
 
-  	def initialize port
-  		@i2c = I2C.create port
+  	def initialize i2c
+  		@i2c = i2c
    	end
 
     def enable
